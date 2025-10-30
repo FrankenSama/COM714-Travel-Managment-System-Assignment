@@ -1,24 +1,25 @@
-# FILE: auth.py
+# FILE: auth.py (UPDATED VERSION)
 # Handles user authentication and session management.
-
-# Import the specific classes we need directly from models
-from models import User, TripCoordinator, TripManager, Administrator
 
 class AuthenticationService:
     def __init__(self):
-        # We'll import load_users inside the method to avoid circular imports
         from data_manager import load_users
         self.users = load_users()
         self.current_user = None
+        print(f"DEBUG: Loaded {len(self.users)} users")  # Debug line
 
     def login(self, username: str, password: str):
         """
         Attempts to log in a user.
         Returns (success, message, user_object)
         """
+        print(f"DEBUG: Attempting login for username: {username}")  # Debug line
+        print(f"DEBUG: Available users: {[user.username for user in self.users]}")  # Debug line
+        
         for user in self.users:
+            print(f"DEBUG: Checking user: {user.username}")  # Debug line
             if user.username == username:
-                if user.password == password:  # In a real system, compare hashed passwords
+                if user.password == password:
                     self.current_user = user
                     return True, f"Login successful! Welcome, {user.name}.", user
                 else:
@@ -35,17 +36,21 @@ class AuthenticationService:
 
 def create_default_admin():
     """Create a default administrator for initial testing."""
-    # Import inside function to avoid circular imports
     from data_manager import load_users, save_user
+    from models import Administrator
     
     users = load_users()
-    admin_exists = any(user.role.value == "Administrator" for user in users)
+    print(f"DEBUG: Checking for existing admins in {len(users)} users")  # Debug line
+    
+    # Check if any user has the Administrator role
+    admin_exists = any(hasattr(user, 'role') and getattr(user.role, 'value', None) == "Administrator" for user in users)
     
     if not admin_exists:
+        print("DEBUG: Creating default admin...")  # Debug line
         default_admin = Administrator(
             user_id="admin001",
             username="admin",
-            password="admin123",  # Change this in a real system!
+            password="admin123",
             name="System Administrator"
         )
         save_user(default_admin)

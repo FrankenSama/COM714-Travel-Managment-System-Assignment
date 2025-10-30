@@ -4,6 +4,7 @@
         "username": "admin",
         "password": "admin123",
         "name": "System Administrator",
-        "role": "UserRole.ADMIN"
+        "role": "Administrator",
+        "_type": "Administrator"
     }
 ]
