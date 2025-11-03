@@ -51,11 +51,11 @@ class TravelManagementSystem:
             print("1. Manage Trip Managers")
             print("2. View All Invoices")
             print("3. Generate Reports")
-            print("4. Coordinator Functions") 
+            print("4. Coordinator Functions")
             print("5. Logout")
             print("6. Exit System")
             
-            choice = input("\nEnter your choice (1-5): ")
+            choice = input("\nEnter your choice (1-6): ")
             
             if choice == "1":
                 self.manage_trip_managers()
@@ -96,7 +96,7 @@ class TravelManagementSystem:
             elif choice == "2":
                 self.generate_total_invoice()
             elif choice == "3":
-                self.trip_coordinator_menu()  # Access coordinator functions
+                self.trip_coordinator_menu()
             elif choice == "4":
                 self.auth_service.logout()
                 print("Logged out successfully.")
@@ -137,7 +137,7 @@ class TravelManagementSystem:
             elif choice == "5":
                 self.handle_payments()
             elif choice == "6":
-                break  # Go back to previous menu
+                break
             elif choice == "7":
                 self.auth_service.logout()
                 print("Logged out successfully.")
@@ -228,8 +228,6 @@ class TravelManagementSystem:
                     start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
                     duration_days = int(duration)
                     
-                    # For coordinators, they are automatically assigned as coordinator
-                    # For managers/admins, they could choose a coordinator
                     coordinator = current_user
                     if not isinstance(coordinator, TripCoordinator):
                         print("Note: Only Trip Coordinators can be assigned to trips.")
@@ -309,7 +307,6 @@ class TravelManagementSystem:
                         trip = user_trips[trip_num]
                         confirm = input(f"Are you sure you want to PERMANENTLY delete '{trip.name}'? This cannot be undone! (y/n): ")
                         if confirm.lower() == 'y':
-                            # HARD DELETE - permanently remove the trip
                             from data_manager import delete_trip
                             delete_trip(trip.trip_id)
                             print("Trip permanently deleted!")
@@ -328,7 +325,185 @@ class TravelManagementSystem:
                 print("Invalid choice. Please try again.")
                 input("Press Enter to continue...")
 
-    # PLACEHOLDER METHODS - We will implement these in the next steps
+    def manage_trip_legs(self):
+        """Manage trip legs - add, view, update, delete legs for trips."""
+        from data_manager import load_trips, save_trip_legs
+        from models import TripLeg, TransportMode, TripLegType
+        from datetime import datetime
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print("=== MANAGE TRIP LEGS ===")
+            
+            trips = load_trips()
+            current_user = self.auth_service.current_user
+            
+            # Filter trips based on user role
+            if isinstance(current_user, TripCoordinator):
+                user_trips = [t for t in trips if t.coordinator and t.coordinator.user_id == current_user.user_id]
+            else:
+                user_trips = trips
+            
+            if not user_trips:
+                print("No trips available. Please create a trip first.")
+                input("Press Enter to continue...")
+                return
+            
+            print("\nSelect a trip to manage its legs:")
+            for i, trip in enumerate(user_trips, 1):
+                print(f"{i}. {trip.name} (ID: {trip.trip_id}) - {len(trip.trip_legs)} legs")
+            
+            print(f"{len(user_trips) + 1}. Back to Main Menu")
+            
+            try:
+                choice = int(input("\nEnter your choice: "))
+                if choice == len(user_trips) + 1:
+                    break
+                elif 1 <= choice <= len(user_trips):
+                    selected_trip = user_trips[choice - 1]
+                    self.manage_legs_for_trip(selected_trip)
+                else:
+                    print("Invalid choice.")
+                    input("Press Enter to continue...")
+            except ValueError:
+                print("Please enter a valid number.")
+                input("Press Enter to continue...")
+
+    def manage_legs_for_trip(self, trip: Trip):
+        """Manage legs for a specific trip."""
+        from models import TripLeg, TransportMode, TripLegType
+        from data_manager import save_trip_legs
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print(f"=== MANAGING LEGS FOR: {trip.name} ===")
+            print(f"Trip ID: {trip.trip_id}")
+            print(f"Current legs: {len(trip.trip_legs)}")
+            
+            # Display current legs
+            if trip.trip_legs:
+                print("\nCurrent Legs:")
+                for i, leg in enumerate(sorted(trip.trip_legs, key=lambda l: l.sequence), 1):
+                    print(f"{i}. {leg}")
+                    print(f"   Type: {leg.leg_type.value}, Cost: £{leg.cost:.2f}")
+            else:
+                print("\nNo legs added yet.")
+            
+            print("\n1. Add New Leg")
+            print("2. Update Leg")
+            print("3. Delete Leg")
+            print("4. Generate Itinerary Preview")
+            print("5. Back to Trip Selection")
+            
+            choice = input("\nEnter your choice (1-5): ")
+            
+            if choice == "1":
+                self.clear_screen()
+                self.display_header()
+                print("=== ADD NEW TRIP LEG ===")
+                
+                leg_id = f"LG{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                sequence = len(trip.trip_legs) + 1
+                start_location = input("Start Location: ")
+                destination = input("Destination: ")
+                transport_provider = input("Transport Provider: ")
+                
+                print("\nTransport Modes:")
+                for i, mode in enumerate(TransportMode, 1):
+                    print(f"{i}. {mode.value}")
+                transport_choice = input("Select transport mode (number): ")
+                
+                print("\nLeg Types:")
+                for i, leg_type in enumerate(TripLegType, 1):
+                    print(f"{i}. {leg_type.value}")
+                type_choice = input("Select leg type (number): ")
+                
+                cost = input("Cost (£): ") or "0.0"
+                description = input("Description/Notes: ")
+                
+                try:
+                    transport_mode = list(TransportMode)[int(transport_choice) - 1]
+                    leg_type = list(TripLegType)[int(type_choice) - 1]
+                    cost_float = float(cost)
+                    
+                    new_leg = TripLeg(
+                        leg_id=leg_id,
+                        sequence=sequence,
+                        start_location=start_location,
+                        destination=destination,
+                        transport_provider=transport_provider,
+                        transport_mode=transport_mode,
+                        leg_type=leg_type,
+                        cost=cost_float,
+                        description=description
+                    )
+                    
+                    trip.trip_legs.append(new_leg)
+                    save_trip_legs(trip)
+                    print("Trip leg added successfully!")
+                    
+                except (ValueError, IndexError):
+                    print("Invalid input. Please try again.")
+                except Exception as e:
+                    print(f"Error adding trip leg: {e}")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "2":
+                if not trip.trip_legs:
+                    print("No legs available to update.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                print("Update leg functionality coming soon...")
+                input("Press Enter to continue...")
+                
+            elif choice == "3":
+                if not trip.trip_legs:
+                    print("No legs available to delete.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                print("\nSelect leg to delete:")
+                for i, leg in enumerate(sorted(trip.trip_legs, key=lambda l: l.sequence), 1):
+                    print(f"{i}. {leg}")
+                
+                try:
+                    leg_choice = int(input("Enter leg number: ")) - 1
+                    if 0 <= leg_choice < len(trip.trip_legs):
+                        leg_to_delete = sorted(trip.trip_legs, key=lambda l: l.sequence)[leg_choice]
+                        confirm = input(f"Delete leg: {leg_to_delete}? (y/n): ")
+                        if confirm.lower() == 'y':
+                            trip.trip_legs = [leg for leg in trip.trip_legs if leg.leg_id != leg_to_delete.leg_id]
+                            save_trip_legs(trip)
+                            print("Leg deleted successfully!")
+                        else:
+                            print("Deletion cancelled.")
+                    else:
+                        print("Invalid selection.")
+                except ValueError:
+                    print("Please enter a valid number.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "4":
+                self.clear_screen()
+                self.display_header()
+                print("=== ITINERARY PREVIEW ===")
+                from models import Itinerary
+                itinerary = Itinerary(trip)
+                print(itinerary.display())
+                input("\nPress Enter to continue...")
+                
+            elif choice == "5":
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                input("Press Enter to continue...")
+
+    # PLACEHOLDER METHODS
     def manage_trip_managers(self):
         print("\n--- Manage Trip Managers ---")
         print("This feature will be implemented in the next phase.")
@@ -356,7 +531,6 @@ class TravelManagementSystem:
 
     def manage_travellers(self):
         print("\n--- Manage Travellers ---")
-        # Let's implement a basic version of this to test our system
         travellers = load_travellers()
         print(f"\nCurrent travellers in system: {len(travellers)}")
         
@@ -401,11 +575,6 @@ class TravelManagementSystem:
                 print(f"Error adding traveller: {e}")
             
             input("Press Enter to continue...")
-
-    def manage_trip_legs(self):
-        print("\n--- Manage Trip Legs ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
 
     def generate_itinerary(self):
         print("\n--- Generate Itinerary ---")

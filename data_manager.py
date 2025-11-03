@@ -5,6 +5,7 @@ import json
 import os
 from datetime import datetime
 from typing import List, Dict, Any
+from models import User, TripCoordinator, TripManager, Administrator, Traveller, Trip, TripLeg, Invoice, Payment, TransportMode, TripLegType
 
 DATA_DIR = "data"
 USER_FILE = os.path.join(DATA_DIR, "users.json")
@@ -293,6 +294,7 @@ def load_trips() -> List:
             )
             trip.travellers = travellers
             trip.is_active = data.get('is_active', True)
+            trip.trip_legs = load_trip_legs_for_trip(data)
             
             trips.append(trip)
         except Exception as e:
@@ -301,22 +303,64 @@ def load_trips() -> List:
     
     return trips
 
-def save_trip_leg(trip_leg) -> None:
-    """Saves a single trip leg to the JSON file."""
-    # We'll store trip legs within the trip data for simplicity
-    # In a more complex system, this would be in a separate file
-    pass
-
-def load_trip_legs() -> List:
-    """Loads all trip legs from the JSON file."""
-    # We'll implement this when we add trip leg management
-    return []
-
 def delete_trip(trip_id: str) -> None:
     """Permanently delete a trip from the JSON file."""
     trips = _load_json(TRIP_FILE)
     # Filter out the trip to be deleted
     updated_trips = [t for t in trips if t['trip_id'] != trip_id]
     _save_json(TRIP_FILE, updated_trips)
+
+def save_trip_legs(trip) -> None:
+    """Saves all trip legs for a trip."""
+    # We'll store trip legs within the trip data
+    trips = _load_json(TRIP_FILE)
     
+    for trip_data in trips:
+        if trip_data['trip_id'] == trip.trip_id:
+            # Convert trip legs to dictionaries
+            trip_data['trip_legs'] = []
+            for leg in trip.trip_legs:
+                leg_dict = {
+                    'leg_id': leg.leg_id,
+                    'sequence': leg.sequence,
+                    'start_location': leg.start_location,
+                    'destination': leg.destination,
+                    'transport_provider': leg.transport_provider,
+                    'transport_mode': leg.transport_mode.value,
+                    'leg_type': leg.leg_type.value,
+                    'cost': leg.cost,
+                    'description': leg.description
+                }
+                trip_data['trip_legs'].append(leg_dict)
+            break
+    
+    _save_json(TRIP_FILE, trips)
+
+def load_trip_legs_for_trip(trip_data: dict) -> List:
+    """Loads trip legs for a specific trip from trip data."""
+    # Import locally to avoid circular imports
+    from models import TripLeg, TransportMode, TripLegType
+    
+    trip_legs = []
+    if 'trip_legs' in trip_data:
+        for leg_data in trip_data['trip_legs']:
+            try:
+                leg = TripLeg(
+                    leg_id=leg_data['leg_id'],
+                    sequence=leg_data['sequence'],
+                    start_location=leg_data['start_location'],
+                    destination=leg_data['destination'],
+                    transport_provider=leg_data['transport_provider'],
+                    transport_mode=TransportMode(leg_data['transport_mode']),
+                    leg_type=TripLegType(leg_data['leg_type']),
+                    cost=leg_data.get('cost', 0.0),
+                    description=leg_data.get('description', '')
+                )
+                trip_legs.append(leg)
+            except Exception as e:
+                print(f"Error loading trip leg {leg_data.get('leg_id', 'unknown')}: {e}")
+                continue
+    
+    return trip_legs
+
 print("Data Manager module loaded successfully.")

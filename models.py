@@ -103,7 +103,9 @@ class Trip:
         self.is_active = True
 
 class TripLeg:
-    def __init__(self, leg_id: str, sequence: int, start_location: str, destination: str, transport_provider: str, transport_mode: TransportMode, leg_type: TripLegType, cost: float = 0.0):
+    def __init__(self, leg_id: str, sequence: int, start_location: str, destination: str, 
+                 transport_provider: str, transport_mode: TransportMode, 
+                 leg_type: TripLegType, cost: float = 0.0, description: str = ""):
         self.leg_id = leg_id
         self.sequence = sequence
         self.start_location = start_location
@@ -112,6 +114,10 @@ class TripLeg:
         self.transport_mode = transport_mode
         self.leg_type = leg_type
         self.cost = cost
+        self.description = description
+
+    def __str__(self):
+        return f"{self.sequence}. {self.start_location} → {self.destination} ({self.transport_mode.value})"
 
 class Invoice:
     def __init__(self, invoice_id: str, trip: Trip, issue_date: datetime, total_amount: float):
@@ -140,9 +146,30 @@ class Itinerary:
         self.legs = sorted(trip.trip_legs, key=lambda leg: leg.sequence)
 
     def display(self) -> str:
-        # Formats the itinerary for printing/displaying
-        pass
-
+        """Formats the itinerary for printing/displaying"""
+        if not self.legs:
+            return "No itinerary available for this trip."
+        
+        output = f"ITINERARY FOR: {self.trip.name}\n"
+        output += f"Start Date: {self.trip.start_date.strftime('%Y-%m-%d')}\n"
+        output += f"Duration: {self.trip.duration_days} days\n"
+        output += "=" * 50 + "\n"
+        
+        for leg in self.legs:
+            output += f"{leg}\n"
+            output += f"   Provider: {leg.transport_provider}\n"
+            output += f"   Type: {leg.leg_type.value}\n"
+            if leg.cost > 0:
+                output += f"   Cost: £{leg.cost:.2f}\n"
+            if leg.description:
+                output += f"   Notes: {leg.description}\n"
+            output += "\n"
+        
+        total_cost = sum(leg.cost for leg in self.legs)
+        output += f"TOTAL ESTIMATED COST: £{total_cost:.2f}\n"
+        
+        return output
+    
 # Reporting Class (Uses Matplotlib/Plotly)
 class ReportGenerator:
     @staticmethod
