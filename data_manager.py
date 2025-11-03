@@ -152,7 +152,55 @@ def load_travellers() -> List:
     
     return travellers
 
-# Add these trip management functions to your data_manager.py
+def assign_traveller_to_trip(trip_id: str, traveller_id: str) -> bool:
+    """Assign a traveller to a trip."""
+    trips = _load_json(TRIP_FILE)
+    travellers = load_travellers()
+    
+    # Find the traveller
+    traveller = next((t for t in travellers if t.traveller_id == traveller_id), None)
+    if not traveller:
+        print(f"Traveller {traveller_id} not found.")
+        return False
+    
+    # Find the trip and assign traveller
+    trip_updated = False
+    for trip_data in trips:
+        if trip_data['trip_id'] == trip_id:
+            if 'traveller_ids' not in trip_data:
+                trip_data['traveller_ids'] = []
+            
+            # Check if traveller already assigned
+            if traveller_id not in trip_data['traveller_ids']:
+                trip_data['traveller_ids'].append(traveller_id)
+                trip_updated = True
+            break
+    
+    if trip_updated:
+        _save_json(TRIP_FILE, trips)
+        return True
+    else:
+        print(f"Trip {trip_id} not found or traveller already assigned.")
+        return False
+
+def remove_traveller_from_trip(trip_id: str, traveller_id: str) -> bool:
+    """Remove a traveller from a trip."""
+    trips = _load_json(TRIP_FILE)
+    
+    trip_updated = False
+    for trip_data in trips:
+        if trip_data['trip_id'] == trip_id:
+            if 'traveller_ids' in trip_data and traveller_id in trip_data['traveller_ids']:
+                trip_data['traveller_ids'].remove(traveller_id)
+                trip_updated = True
+            break
+    
+    if trip_updated:
+        _save_json(TRIP_FILE, trips)
+        return True
+    else:
+        print(f"Traveller {traveller_id} not found in trip {trip_id}.")
+        return False
 
 def save_trip(trip) -> None:
     """Saves a single trip to the JSON file."""
@@ -227,7 +275,19 @@ def load_trips() -> List:
     
     return trips
 
-# Add these trip management functions to your data_manager.py
+def delete_traveller(traveller_id: str) -> None:
+    """Permanently delete a traveller from the JSON file."""
+    travellers = _load_json(TRAVELLER_FILE)
+    # Filter out the traveller to be deleted
+    updated_travellers = [t for t in travellers if t['traveller_id'] != traveller_id]
+    _save_json(TRAVELLER_FILE, updated_travellers)
+    
+    # Also remove the traveller from any trips they were assigned to
+    trips = _load_json(TRIP_FILE)
+    for trip in trips:
+        if 'traveller_ids' in trip and traveller_id in trip['traveller_ids']:
+            trip['traveller_ids'].remove(traveller_id)
+    _save_json(TRIP_FILE, trips)
 
 def save_trip(trip) -> None:
     """Saves a single trip to the JSON file."""

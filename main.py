@@ -118,13 +118,14 @@ class TravelManagementSystem:
             print("1. Manage Trips")
             print("2. Manage Travellers")
             print("3. Manage Trip Legs")
-            print("4. Generate Itinerary")
-            print("5. Handle Payments")
-            print("6. Back to Previous Menu")
-            print("7. Logout")
-            print("8. Exit System")
+            print("4. Manage Trip Assignments")
+            print("5. Generate Itinerary")
+            print("6. Handle Payments")
+            print("7. Back to Previous Menu")
+            print("8. Logout")
+            print("9. Exit System")
             
-            choice = input("\nEnter your choice (1-8): ")
+            choice = input("\nEnter your choice (1-9): ")
             
             if choice == "1":
                 self.manage_trips()
@@ -133,17 +134,19 @@ class TravelManagementSystem:
             elif choice == "3":
                 self.manage_trip_legs()
             elif choice == "4":
-                self.generate_itinerary()
+                self.manage_trip_assignments()
             elif choice == "5":
-                self.handle_payments()
+                self.generate_itinerary()
             elif choice == "6":
-                break
+                self.handle_payments()
             elif choice == "7":
+                break
+            elif choice == "8":
                 self.auth_service.logout()
                 print("Logged out successfully.")
                 input("Press Enter to continue...")
                 break
-            elif choice == "8":
+            elif choice == "9":
                 self.is_running = False
                 break
             else:
@@ -503,6 +506,148 @@ class TravelManagementSystem:
                 print("Invalid choice. Please try again.")
                 input("Press Enter to continue...")
 
+    def manage_trip_assignments(self):
+        """Manage traveller assignments to trips."""
+        from data_manager import load_trips, load_travellers, assign_traveller_to_trip, remove_traveller_from_trip
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print("=== MANAGE TRIP ASSIGNMENTS ===")
+            
+            trips = load_trips()
+            travellers = load_travellers()
+            current_user = self.auth_service.current_user
+            
+            # Filter trips based on user role
+            if isinstance(current_user, TripCoordinator):
+                user_trips = [t for t in trips if t.coordinator and t.coordinator.user_id == current_user.user_id]
+            else:
+                user_trips = trips
+            
+            if not user_trips:
+                print("No trips available. Please create a trip first.")
+                input("Press Enter to continue...")
+                return
+            
+            print("\nSelect a trip to manage traveller assignments:")
+            for i, trip in enumerate(user_trips, 1):
+                assigned_count = len(trip.travellers)
+                print(f"{i}. {trip.name} - {assigned_count} travellers assigned")
+            
+            print(f"{len(user_trips) + 1}. Back to Main Menu")
+            
+            try:
+                choice = int(input("\nEnter your choice: "))
+                if choice == len(user_trips) + 1:
+                    break
+                elif 1 <= choice <= len(user_trips):
+                    selected_trip = user_trips[choice - 1]
+                    self.manage_assignments_for_trip(selected_trip, travellers)
+                else:
+                    print("Invalid choice.")
+                    input("Press Enter to continue...")
+            except ValueError:
+                print("Please enter a valid number.")
+                input("Press Enter to continue...")
+
+    def manage_assignments_for_trip(self, trip: Trip, all_travellers: list):
+        """Manage assignments for a specific trip."""
+        from data_manager import assign_traveller_to_trip, remove_traveller_from_trip
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print(f"=== MANAGING ASSIGNMENTS FOR: {trip.name} ===")
+            print(f"Trip ID: {trip.trip_id}")
+            
+            # Display currently assigned travellers
+            print(f"\nCurrently assigned travellers ({len(trip.travellers)}):")
+            if trip.travellers:
+                for i, traveller in enumerate(trip.travellers, 1):
+                    print(f"{i}. {traveller.name} (ID: {traveller.traveller_id})")
+            else:
+                print("No travellers assigned yet.")
+            
+            # Display available travellers
+            available_travellers = [t for t in all_travellers if t not in trip.travellers]
+            print(f"\nAvailable travellers ({len(available_travellers)}):")
+            if available_travellers:
+                for i, traveller in enumerate(available_travellers, 1):
+                    print(f"{i}. {traveller.name} (ID: {traveller.traveller_id})")
+            else:
+                print("No available travellers.")
+            
+            print("\n1. Assign Traveller to Trip")
+            print("2. Remove Traveller from Trip")
+            print("3. Back to Trip Selection")
+            
+            choice = input("\nEnter your choice (1-3): ")
+            
+            if choice == "1":
+                if not available_travellers:
+                    print("No available travellers to assign.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                print("\nSelect traveller to assign:")
+                for i, traveller in enumerate(available_travellers, 1):
+                    print(f"{i}. {traveller.name} (ID: {traveller.traveller_id})")
+                
+                try:
+                    traveller_choice = int(input("\nEnter traveller number: ")) - 1
+                    if 0 <= traveller_choice < len(available_travellers):
+                        traveller_to_assign = available_travellers[traveller_choice]
+                        if assign_traveller_to_trip(trip.trip_id, traveller_to_assign.traveller_id):
+                            print(f"Traveller '{traveller_to_assign.name}' assigned successfully!")
+                            # Refresh the trip data
+                            from data_manager import load_trips
+                            trips = load_trips()
+                            trip.travellers = next((t.travellers for t in trips if t.trip_id == trip.trip_id), [])
+                        else:
+                            print("Failed to assign traveller.")
+                    else:
+                        print("Invalid selection.")
+                except ValueError:
+                    print("Please enter a valid number.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "2":
+                if not trip.travellers:
+                    print("No travellers assigned to remove.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                print("\nSelect traveller to remove:")
+                for i, traveller in enumerate(trip.travellers, 1):
+                    print(f"{i}. {traveller.name} (ID: {traveller.traveller_id})")
+                
+                try:
+                    traveller_choice = int(input("\nEnter traveller number: ")) - 1
+                    if 0 <= traveller_choice < len(trip.travellers):
+                        traveller_to_remove = trip.travellers[traveller_choice]
+                        if remove_traveller_from_trip(trip.trip_id, traveller_to_remove.traveller_id):
+                            print(f"Traveller '{traveller_to_remove.name}' removed successfully!")
+                            # Refresh the trip data
+                            from data_manager import load_trips
+                            trips = load_trips()
+                            trip.travellers = next((t.travellers for t in trips if t.trip_id == trip.trip_id), [])
+                        else:
+                            print("Failed to remove traveller.")
+                    else:
+                        print("Invalid selection.")
+                except ValueError:
+                    print("Please enter a valid number.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "3":
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                input("Press Enter to continue...")
+
     # PLACEHOLDER METHODS
     def manage_trip_managers(self):
         print("\n--- Manage Trip Managers ---")
@@ -530,51 +675,104 @@ class TravelManagementSystem:
         input("Press Enter to continue...")
 
     def manage_travellers(self):
-        print("\n--- Manage Travellers ---")
-        travellers = load_travellers()
-        print(f"\nCurrent travellers in system: {len(travellers)}")
+        """Manage travellers - view, add, delete."""
+        from data_manager import load_travellers, save_traveller, delete_traveller
         
-        print("\n1. View All Travellers")
-        print("2. Add New Traveller")
-        print("3. Back")
-        
-        choice = input("\nEnter your choice (1-3): ")
-        
-        if choice == "1":
-            if travellers:
-                for traveller in travellers:
-                    print(f"- {traveller.name} (ID: {traveller.traveller_id})")
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print("=== MANAGE TRAVELLERS ===")
+            
+            travellers = load_travellers()
+            print(f"\nCurrent travellers in system: {len(travellers)}")
+            
+            print("\n1. View All Travellers")
+            print("2. Add New Traveller")
+            print("3. Delete Traveller")
+            print("4. Back")
+            
+            choice = input("\nEnter your choice (1-4): ")
+            
+            if choice == "1":
+                self.clear_screen()
+                self.display_header()
+                print("=== ALL TRAVELLERS ===")
+                if travellers:
+                    for i, traveller in enumerate(travellers, 1):
+                        print(f"{i}. {traveller.name} (ID: {traveller.traveller_id})")
+                        print(f"   Address: {traveller.address}")
+                        print(f"   Date of Birth: {traveller.date_of_birth.strftime('%Y-%m-%d')}")
+                        print(f"   Emergency Contact: {traveller.emergency_contact}")
+                        print(f"   Government ID: {traveller.government_id}")
+                        print()
+                else:
+                    print("No travellers found.")
+                input("\nPress Enter to continue...")
+                
+            elif choice == "2":
+                self.clear_screen()
+                self.display_header()
+                print("=== ADD NEW TRAVELLER ===")
+                traveller_id = f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                name = input("Full Name: ")
+                address = input("Address: ")
+                dob = input("Date of Birth (YYYY-MM-DD): ")
+                emergency_contact = input("Emergency Contact: ")
+                government_id = input("Government ID: ")
+                
+                try:
+                    dob_date = datetime.strptime(dob, '%Y-%m-%d')
+                    new_traveller = Traveller(
+                        traveller_id=traveller_id,
+                        name=name,
+                        address=address,
+                        date_of_birth=dob_date,
+                        emergency_contact=emergency_contact,
+                        government_id=government_id
+                    )
+                    save_traveller(new_traveller)
+                    print(f"Traveller '{name}' added successfully with ID: {traveller_id}")
+                except ValueError:
+                    print("Invalid date format. Please use YYYY-MM-DD.")
+                except Exception as e:
+                    print(f"Error adding traveller: {e}")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "3":
+                if not travellers:
+                    print("No travellers available to delete.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                self.clear_screen()
+                self.display_header()
+                print("=== DELETE TRAVELLER ===")
+                for i, traveller in enumerate(travellers, 1):
+                    print(f"{i}. {traveller.name} (ID: {traveller.traveller_id})")
+                
+                try:
+                    traveller_num = int(input("\nSelect traveller to delete (number): ")) - 1
+                    if 0 <= traveller_num < len(travellers):
+                        traveller = travellers[traveller_num]
+                        confirm = input(f"Are you sure you want to PERMANENTLY delete '{traveller.name}'? This cannot be undone! (y/n): ")
+                        if confirm.lower() == 'y':
+                            delete_traveller(traveller.traveller_id)
+                            print(f"Traveller '{traveller.name}' permanently deleted!")
+                        else:
+                            print("Deletion cancelled.")
+                    else:
+                        print("Invalid traveller selection.")
+                except (ValueError, IndexError):
+                    print("Invalid input.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "4":
+                break
             else:
-                print("No travellers found.")
-            input("\nPress Enter to continue...")
-            
-        elif choice == "2":
-            print("\n--- Add New Traveller ---")
-            traveller_id = f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            name = input("Full Name: ")
-            address = input("Address: ")
-            dob = input("Date of Birth (YYYY-MM-DD): ")
-            emergency_contact = input("Emergency Contact: ")
-            government_id = input("Government ID: ")
-            
-            try:
-                dob_date = datetime.strptime(dob, '%Y-%m-%d')
-                new_traveller = Traveller(
-                    traveller_id=traveller_id,
-                    name=name,
-                    address=address,
-                    date_of_birth=dob_date,
-                    emergency_contact=emergency_contact,
-                    government_id=government_id
-                )
-                save_traveller(new_traveller)
-                print(f"Traveller '{name}' added successfully!")
-            except ValueError:
-                print("Invalid date format. Please use YYYY-MM-DD.")
-            except Exception as e:
-                print(f"Error adding traveller: {e}")
-            
-            input("Press Enter to continue...")
+                print("Invalid choice. Please try again.")
+                input("Press Enter to continue...")
 
     def generate_itinerary(self):
         print("\n--- Generate Itinerary ---")
