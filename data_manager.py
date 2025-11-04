@@ -106,6 +106,50 @@ def load_users() -> List:
     
     return users
 
+def create_trip_manager(user_id: str, username: str, password: str, name: str) -> TripManager:
+    """Create a new Trip Manager user."""
+    from models import TripManager
+    
+    # Check if username already exists
+    existing_users = load_users()
+    if any(user.username == username for user in existing_users):
+        raise ValueError(f"Username '{username}' already exists.")
+    
+    new_manager = TripManager(
+        user_id=user_id,
+        username=username,
+        password=password,
+        name=name
+    )
+    
+    save_user(new_manager)
+    return new_manager
+
+def create_trip_coordinator(user_id: str, username: str, password: str, name: str) -> TripCoordinator:
+    """Create a new Trip Coordinator user."""
+    from models import TripCoordinator
+    
+    # Check if username already exists
+    existing_users = load_users()
+    if any(user.username == username for user in existing_users):
+        raise ValueError(f"Username '{username}' already exists.")
+    
+    new_coordinator = TripCoordinator(
+        user_id=user_id,
+        username=username,
+        password=password,
+        name=name
+    )
+    
+    save_user(new_coordinator)
+    return new_coordinator
+
+def delete_user(user_id: str) -> None:
+    """Permanently delete a user from the system."""
+    users = _load_json(USER_FILE)
+    updated_users = [u for u in users if u['user_id'] != user_id]
+    _save_json(USER_FILE, updated_users)
+
 def save_traveller(traveller) -> None:
     """Saves a single traveller to the JSON file."""
     travellers = _load_json(TRAVELLER_FILE)

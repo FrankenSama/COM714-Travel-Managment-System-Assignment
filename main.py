@@ -949,29 +949,240 @@ class TravelManagementSystem:
                 print("Invalid choice. Please try again.")
                 input("Press Enter to continue...")
 
-    # PLACEHOLDER METHODS
     def manage_trip_managers(self):
-        print("\n--- Manage Trip Managers ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
+        """Allow Administrators to manage Trip Manager accounts."""
+        from data_manager import load_users, create_trip_manager, delete_user
+        from datetime import datetime
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print("=== MANAGE TRIP MANAGERS ===")
+            
+            all_users = load_users()
+            trip_managers = [user for user in all_users if isinstance(user, TripManager)]
+            
+            print(f"\nCurrent Trip Managers: {len(trip_managers)}")
+            
+            print("\n1. View All Trip Managers")
+            print("2. Create New Trip Manager")
+            print("3. Delete Trip Manager")
+            print("4. Back to Admin Menu")
+            
+            choice = input("\nEnter your choice (1-4): ")
+            
+            if choice == "1":
+                self.clear_screen()
+                self.display_header()
+                print("=== ALL TRIP MANAGERS ===")
+                if trip_managers:
+                    for i, manager in enumerate(trip_managers, 1):
+                        print(f"{i}. {manager.name} (Username: {manager.username})")
+                        print(f"   User ID: {manager.user_id}")
+                        print()
+                else:
+                    print("No Trip Managers found.")
+                input("\nPress Enter to continue...")
+                
+            elif choice == "2":
+                self.clear_screen()
+                self.display_header()
+                print("=== CREATE NEW TRIP MANAGER ===")
+                
+                user_id = f"TM{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                username = input("Username: ")
+                password = input("Password: ")
+                name = input("Full Name: ")
+                
+                try:
+                    if not username or not password or not name:
+                        print("All fields are required.")
+                    else:
+                        new_manager = create_trip_manager(user_id, username, password, name)
+                        print(f"Trip Manager '{name}' created successfully!")
+                        print(f"Username: {username}, Password: {password}")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                except Exception as e:
+                    print(f"Error creating Trip Manager: {e}")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "3":
+                if not trip_managers:
+                    print("No Trip Managers available to delete.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                self.clear_screen()
+                self.display_header()
+                print("=== DELETE TRIP MANAGER ===")
+                for i, manager in enumerate(trip_managers, 1):
+                    print(f"{i}. {manager.name} (Username: {manager.username})")
+                
+                try:
+                    manager_num = int(input("\nSelect Trip Manager to delete (number): ")) - 1
+                    if 0 <= manager_num < len(trip_managers):
+                        manager = trip_managers[manager_num]
+                        
+                        # Prevent deleting yourself
+                        if manager.user_id == self.auth_service.current_user.user_id:
+                            print("You cannot delete your own account!")
+                            input("Press Enter to continue...")
+                            continue
+                        
+                        confirm = input(f"Are you sure you want to PERMANENTLY delete Trip Manager '{manager.name}'? (y/n): ")
+                        if confirm.lower() == 'y':
+                            delete_user(manager.user_id)
+                            print(f"Trip Manager '{manager.name}' permanently deleted!")
+                        else:
+                            print("Deletion cancelled.")
+                    else:
+                        print("Invalid selection.")
+                except (ValueError, IndexError):
+                    print("Invalid input.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "4":
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                input("Press Enter to continue...")
+
+    def manage_trip_coordinators(self):
+        """Allow Trip Managers to manage Trip Coordinator accounts."""
+        from data_manager import load_users, create_trip_coordinator, delete_user
+        from datetime import datetime
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print("=== MANAGE TRIP COORDINATORS ===")
+            
+            all_users = load_users()
+            trip_coordinators = [user for user in all_users if isinstance(user, TripCoordinator)]
+            
+            print(f"\nCurrent Trip Coordinators: {len(trip_coordinators)}")
+            
+            print("\n1. View All Trip Coordinators")
+            print("2. Create New Trip Coordinator")
+            print("3. Delete Trip Coordinator")
+            print("4. Back to Manager Menu")
+            
+            choice = input("\nEnter your choice (1-4): ")
+            
+            if choice == "1":
+                self.clear_screen()
+                self.display_header()
+                print("=== ALL TRIP COORDINATORS ===")
+                if trip_coordinators:
+                    for i, coordinator in enumerate(trip_coordinators, 1):
+                        print(f"{i}. {coordinator.name} (Username: {coordinator.username})")
+                        print(f"   User ID: {coordinator.user_id}")
+                        print()
+                else:
+                    print("No Trip Coordinators found.")
+                input("\nPress Enter to continue...")
+                
+            elif choice == "2":
+                self.clear_screen()
+                self.display_header()
+                print("=== CREATE NEW TRIP COORDINATOR ===")
+                
+                user_id = f"TC{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                username = input("Username: ")
+                password = input("Password: ")
+                name = input("Full Name: ")
+                
+                try:
+                    if not username or not password or not name:
+                        print("All fields are required.")
+                    else:
+                        new_coordinator = create_trip_coordinator(user_id, username, password, name)
+                        print(f"Trip Coordinator '{name}' created successfully!")
+                        print(f"Username: {username}, Password: {password}")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                except Exception as e:
+                    print(f"Error creating Trip Coordinator: {e}")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "3":
+                if not trip_coordinators:
+                    print("No Trip Coordinators available to delete.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                self.clear_screen()
+                self.display_header()
+                print("=== DELETE TRIP COORDINATOR ===")
+                for i, coordinator in enumerate(trip_coordinators, 1):
+                    print(f"{i}. {coordinator.name} (Username: {coordinator.username})")
+                
+                try:
+                    coordinator_num = int(input("\nSelect Trip Coordinator to delete (number): ")) - 1
+                    if 0 <= coordinator_num < len(trip_coordinators):
+                        coordinator = trip_coordinators[coordinator_num]
+                        confirm = input(f"Are you sure you want to PERMANENTLY delete Trip Coordinator '{coordinator.name}'? (y/n): ")
+                        if confirm.lower() == 'y':
+                            delete_user(coordinator.user_id)
+                            print(f"Trip Coordinator '{coordinator.name}' permanently deleted!")
+                        else:
+                            print("Deletion cancelled.")
+                    else:
+                        print("Invalid selection.")
+                except (ValueError, IndexError):
+                    print("Invalid input.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "4":
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                input("Press Enter to continue...")
 
     def view_all_invoices(self):
-        print("\n--- View All Invoices ---")
+        """Allow Administrators to view all invoices in the system."""
+        from data_manager import load_invoices
+        
+        self.clear_screen()
+        self.display_header()
+        print("=== ALL SYSTEM INVOICES ===")
+        
+        invoices = load_invoices()
+        
+        if invoices:
+            total_invoices = len(invoices)
+            total_value = sum(invoice.total_amount for invoice in invoices)
+            paid_invoices = len([inv for inv in invoices if inv.is_fully_paid()])
+            pending_invoices = total_invoices - paid_invoices
+            
+            print(f"Summary: {total_invoices} invoices, Total Value: £{total_value:.2f}")
+            print(f"Paid: {paid_invoices}, Pending: {pending_invoices}")
+            print("-" * 50)
+            
+            for i, invoice in enumerate(invoices, 1):
+                status = "PAID" if invoice.is_fully_paid() else "PENDING"
+                balance = invoice.calculate_balance()
+                print(f"{i}. {invoice.trip.name} - £{invoice.total_amount:.2f} ({status})")
+                print(f"   Coordinator: {invoice.trip.coordinator.name if invoice.trip.coordinator else 'Unassigned'}")
+                print(f"   Balance: £{balance:.2f}, Invoice ID: {invoice.invoice_id}")
+                print()
+        else:
+            print("No invoices found in the system.")
+        
+        input("\nPress Enter to continue...")
+
+    def generate_total_invoice(self):
+        print("\n--- Generate Total Invoice ---")
         print("This feature will be implemented in the next phase.")
         input("Press Enter to continue...")
 
     def generate_reports(self):
         print("\n--- Generate Reports ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
-
-    def manage_trip_coordinators(self):
-        print("\n--- Manage Trip Coordinators ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
-
-    def generate_total_invoice(self):
-        print("\n--- Generate Total Invoice ---")
         print("This feature will be implemented in the next phase.")
         input("Press Enter to continue...")
 
