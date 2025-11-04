@@ -648,31 +648,206 @@ class TravelManagementSystem:
                 print("Invalid choice. Please try again.")
                 input("Press Enter to continue...")
 
-    # PLACEHOLDER METHODS
-    def manage_trip_managers(self):
-        print("\n--- Manage Trip Managers ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
-
-    def view_all_invoices(self):
-        print("\n--- View All Invoices ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
-
-    def generate_reports(self):
-        print("\n--- Generate Reports ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
-
-    def manage_trip_coordinators(self):
-        print("\n--- Manage Trip Coordinators ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
-
-    def generate_total_invoice(self):
-        print("\n--- Generate Total Invoice ---")
-        print("This feature will be implemented in the next phase.")
-        input("Press Enter to continue...")
+    def handle_payments(self):
+        """Handle invoices and payments for trips."""
+        from data_manager import load_trips, load_invoices, save_invoice, delete_invoice
+        from models import Invoice, Payment
+        from datetime import datetime
+        
+        while True:
+            self.clear_screen()
+            self.display_header()
+            print("=== MANAGE INVOICES & PAYMENTS ===")
+            
+            trips = load_trips()
+            invoices = load_invoices()
+            current_user = self.auth_service.current_user
+            
+            # Filter trips based on user role
+            if isinstance(current_user, TripCoordinator):
+                user_trips = [t for t in trips if t.coordinator and t.coordinator.user_id == current_user.user_id]
+            else:
+                user_trips = trips
+            
+            # Filter invoices based on user role
+            if isinstance(current_user, TripCoordinator):
+                user_invoices = [inv for inv in invoices if inv.trip.coordinator and inv.trip.coordinator.user_id == current_user.user_id]
+            else:
+                user_invoices = invoices
+            
+            print(f"\nYour trips: {len(user_trips)}")
+            print(f"Your invoices: {len(user_invoices)}")
+            
+            print("\n1. View All Invoices")
+            print("2. Create Invoice for Trip")
+            print("3. Record Payment")
+            print("4. Delete Invoice")
+            print("5. Back to Main Menu")
+            
+            choice = input("\nEnter your choice (1-5): ")
+            
+            if choice == "1":
+                self.clear_screen()
+                self.display_header()
+                print("=== ALL INVOICES ===")
+                if user_invoices:
+                    for i, invoice in enumerate(user_invoices, 1):
+                        print(f"{i}. {invoice}")
+                        print(f"   Trip: {invoice.trip.name}")
+                        print(f"   Issue Date: {invoice.issue_date.strftime('%Y-%m-%d')}")
+                        if invoice.payments:
+                            print(f"   Payments: {len(invoice.payments)}")
+                            for payment in invoice.payments:
+                                print(f"     - {payment}")
+                        print()
+                else:
+                    print("No invoices found.")
+                input("\nPress Enter to continue...")
+                
+            elif choice == "2":
+                if not user_trips:
+                    print("No trips available to invoice.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                self.clear_screen()
+                self.display_header()
+                print("=== CREATE INVOICE ===")
+                print("Select a trip to invoice:")
+                for i, trip in enumerate(user_trips, 1):
+                    total_trip_cost = sum(leg.cost for leg in trip.trip_legs)
+                    print(f"{i}. {trip.name} - Estimated cost: £{total_trip_cost:.2f}")
+                
+                try:
+                    trip_choice = int(input("\nSelect trip (number): ")) - 1
+                    if 0 <= trip_choice < len(user_trips):
+                        selected_trip = user_trips[trip_choice]
+                        
+                        # Calculate total cost from trip legs
+                        total_cost = sum(leg.cost for leg in selected_trip.trip_legs)
+                        if total_cost == 0:
+                            print("This trip has no costs associated. Please add trip legs with costs first.")
+                            input("Press Enter to continue...")
+                            continue
+                        
+                        invoice_id = f"INV{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                        
+                        print(f"\nCreating invoice for: {selected_trip.name}")
+                        print(f"Total trip cost: £{total_cost:.2f}")
+                        
+                        confirm = input(f"Create invoice for £{total_cost:.2f}? (y/n): ")
+                        if confirm.lower() == 'y':
+                            new_invoice = Invoice(
+                                invoice_id=invoice_id,
+                                trip=selected_trip,
+                                issue_date=datetime.now(),
+                                total_amount=total_cost
+                            )
+                            save_invoice(new_invoice)
+                            print(f"Invoice {invoice_id} created successfully!")
+                        else:
+                            print("Invoice creation cancelled.")
+                    else:
+                        print("Invalid trip selection.")
+                except ValueError:
+                    print("Please enter a valid number.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "3":
+                if not user_invoices:
+                    print("No invoices available for payment.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                # Filter to show only invoices with balance due
+                unpaid_invoices = [inv for inv in user_invoices if not inv.is_fully_paid()]
+                if not unpaid_invoices:
+                    print("All invoices are fully paid!")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                self.clear_screen()
+                self.display_header()
+                print("=== RECORD PAYMENT ===")
+                print("Select invoice to record payment:")
+                for i, invoice in enumerate(unpaid_invoices, 1):
+                    balance = invoice.calculate_balance()
+                    print(f"{i}. {invoice.trip.name} - Balance: £{balance:.2f}")
+                
+                try:
+                    invoice_choice = int(input("\nSelect invoice (number): ")) - 1
+                    if 0 <= invoice_choice < len(unpaid_invoices):
+                        selected_invoice = unpaid_invoices[invoice_choice]
+                        balance = selected_invoice.calculate_balance()
+                        
+                        print(f"\nInvoice: {selected_invoice.invoice_id}")
+                        print(f"Trip: {selected_invoice.trip.name}")
+                        print(f"Total Amount: £{selected_invoice.total_amount:.2f}")
+                        print(f"Balance Due: £{balance:.2f}")
+                        
+                        amount = input(f"Payment amount (£): ") or str(balance)
+                        method = input("Payment method (Cash/Card/Transfer): ") or "Cash"
+                        
+                        try:
+                            payment_amount = float(amount)
+                            if payment_amount > balance:
+                                print(f"Warning: Payment amount exceeds balance. Recording £{balance:.2f} instead.")
+                                payment_amount = balance
+                            
+                            selected_invoice.add_payment(payment_amount, datetime.now(), method)
+                            save_invoice(selected_invoice)
+                            
+                            if selected_invoice.is_fully_paid():
+                                selected_invoice.status = "Paid"
+                                save_invoice(selected_invoice)
+                                print("Invoice fully paid! Status updated to Paid.")
+                            else:
+                                print(f"Payment of £{payment_amount:.2f} recorded successfully.")
+                                
+                        except ValueError:
+                            print("Invalid amount. Please enter a number.")
+                    else:
+                        print("Invalid invoice selection.")
+                except ValueError:
+                    print("Please enter a valid number.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "4":
+                if not user_invoices:
+                    print("No invoices available to delete.")
+                    input("Press Enter to continue...")
+                    continue
+                    
+                self.clear_screen()
+                self.display_header()
+                print("=== DELETE INVOICE ===")
+                for i, invoice in enumerate(user_invoices, 1):
+                    print(f"{i}. {invoice}")
+                
+                try:
+                    invoice_num = int(input("\nSelect invoice to delete (number): ")) - 1
+                    if 0 <= invoice_num < len(user_invoices):
+                        invoice = user_invoices[invoice_num]
+                        confirm = input(f"Are you sure you want to PERMANENTLY delete invoice {invoice.invoice_id}? (y/n): ")
+                        if confirm.lower() == 'y':
+                            delete_invoice(invoice.invoice_id)
+                            print("Invoice permanently deleted!")
+                        else:
+                            print("Deletion cancelled.")
+                    else:
+                        print("Invalid invoice selection.")
+                except (ValueError, IndexError):
+                    print("Invalid input.")
+                
+                input("Press Enter to continue...")
+                
+            elif choice == "5":
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                input("Press Enter to continue...")
 
     def manage_travellers(self):
         """Manage travellers - view, add, delete."""
@@ -774,13 +949,34 @@ class TravelManagementSystem:
                 print("Invalid choice. Please try again.")
                 input("Press Enter to continue...")
 
-    def generate_itinerary(self):
-        print("\n--- Generate Itinerary ---")
+    # PLACEHOLDER METHODS
+    def manage_trip_managers(self):
+        print("\n--- Manage Trip Managers ---")
         print("This feature will be implemented in the next phase.")
         input("Press Enter to continue...")
 
-    def handle_payments(self):
-        print("\n--- Handle Payments ---")
+    def view_all_invoices(self):
+        print("\n--- View All Invoices ---")
+        print("This feature will be implemented in the next phase.")
+        input("Press Enter to continue...")
+
+    def generate_reports(self):
+        print("\n--- Generate Reports ---")
+        print("This feature will be implemented in the next phase.")
+        input("Press Enter to continue...")
+
+    def manage_trip_coordinators(self):
+        print("\n--- Manage Trip Coordinators ---")
+        print("This feature will be implemented in the next phase.")
+        input("Press Enter to continue...")
+
+    def generate_total_invoice(self):
+        print("\n--- Generate Total Invoice ---")
+        print("This feature will be implemented in the next phase.")
+        input("Press Enter to continue...")
+
+    def generate_itinerary(self):
+        print("\n--- Generate Itinerary ---")
         print("This feature will be implemented in the next phase.")
         input("Press Enter to continue...")
 

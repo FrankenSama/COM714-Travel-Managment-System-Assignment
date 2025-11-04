@@ -139,6 +139,49 @@ class Payment:
         self.amount = amount
         self.date = date
         self.method = method
+        
+class Invoice:
+    def __init__(self, invoice_id: str, trip: Trip, issue_date: datetime, total_amount: float, status: str = "Pending"):
+        self.invoice_id = invoice_id
+        self.trip = trip
+        self.issue_date = issue_date
+        self.total_amount = total_amount
+        self.status = status  # Pending, Paid, Cancelled
+        self.payments = []
+
+    def add_payment(self, amount: float, payment_date: datetime, method: str = "Cash"):
+        payment = Payment(
+            payment_id=f"PAY{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            invoice=self,
+            amount=amount,
+            date=payment_date,
+            method=method
+        )
+        self.payments.append(payment)
+        return payment
+
+    def calculate_balance(self) -> float:
+        total_paid = sum(payment.amount for payment in self.payments)
+        return self.total_amount - total_paid
+
+    def is_fully_paid(self) -> bool:
+        return self.calculate_balance() <= 0
+
+    def __str__(self):
+        balance = self.calculate_balance()
+        status_icon = "✓" if self.is_fully_paid() else "●"
+        return f"{status_icon} Invoice {self.invoice_id} - £{self.total_amount:.2f} ({self.status}) - Balance: £{balance:.2f}"
+
+class Payment:
+    def __init__(self, payment_id: str, invoice: Invoice, amount: float, date: datetime, method: str):
+        self.payment_id = payment_id
+        self.invoice = invoice
+        self.amount = amount
+        self.date = date
+        self.method = method
+
+    def __str__(self):
+        return f"Payment {self.payment_id} - £{self.amount:.2f} via {self.method} on {self.date.strftime('%Y-%m-%d')}"
 
 class Itinerary:
     def __init__(self, trip: Trip):

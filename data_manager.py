@@ -423,4 +423,93 @@ def load_trip_legs_for_trip(trip_data: dict) -> List:
     
     return trip_legs
 
+def save_invoice(invoice) -> None:
+    """Saves an invoice to the JSON file."""
+    invoices = _load_json(INVOICE_FILE)
+    
+    invoice_dict = {
+        'invoice_id': invoice.invoice_id,
+        'trip_id': invoice.trip.trip_id,
+        'issue_date': invoice.issue_date.isoformat() if hasattr(invoice.issue_date, 'isoformat') else str(invoice.issue_date),
+        'total_amount': invoice.total_amount,
+        'status': invoice.status,
+        'payments': []
+    }
+    
+    # Convert payments to dictionaries
+    for payment in invoice.payments:
+        payment_dict = {
+            'payment_id': payment.payment_id,
+            'amount': payment.amount,
+            'date': payment.date.isoformat() if hasattr(payment.date, 'isoformat') else str(payment.date),
+            'method': payment.method
+        }
+        invoice_dict['payments'].append(payment_dict)
+    
+    # Check if invoice exists, if so, update. Else, append.
+    invoice_found = False
+    for i, inv in enumerate(invoices):
+        if inv['invoice_id'] == invoice.invoice_id:
+            invoices[i] = invoice_dict
+            invoice_found = True
+            break
+    
+    if not invoice_found:
+        invoices.append(invoice_dict)
+    
+    _save_json(INVOICE_FILE, invoices)
+
+def load_invoices() -> List:
+    """Loads all invoices from the JSON file."""
+    from models import Invoice, Payment
+    from data_manager import load_trips
+    
+    invoices_data = _load_json(INVOICE_FILE)
+    trips = load_trips()
+    invoices = []
+    
+    for data in invoices_data:
+        try:
+            # Find the trip for this invoice
+            trip = next((t for t in trips if t.trip_id == data['trip_id']), None)
+            if not trip:
+                continue
+                
+            # Convert string dates back to datetime objects
+            issue_date = datetime.fromisoformat(data['issue_date'])
+            
+            # Create invoice object
+            invoice = Invoice(
+                invoice_id=data['invoice_id'],
+                trip=trip,
+                issue_date=issue_date,
+                total_amount=data['total_amount'],
+                status=data.get('status', 'Pending')
+            )
+            
+            # Load payments
+            for payment_data in data.get('payments', []):
+                payment_date = datetime.fromisoformat(payment_data['date'])
+                payment = Payment(
+                    payment_id=payment_data['payment_id'],
+                    invoice=invoice,
+                    amount=payment_data['amount'],
+                    date=payment_date,
+                    method=payment_data['method']
+                )
+                invoice.payments.append(payment)
+            
+            invoices.append(invoice)
+        except Exception as e:
+            print(f"Error loading invoice {data.get('invoice_id', 'unknown')}: {e}")
+            continue
+    
+    return invoices
+
+def delete_invoice(invoice_id: str) -> None:
+    """Permanently delete an invoice from the JSON file."""
+    invoices = _load_json(INVOICE_FILE)
+    updated_invoices = [inv for inv in invoices if inv['invoice_id'] != invoice_id]
+    _save_json(INVOICE_FILE, updated_invoices)
+
 print("Data Manager module loaded successfully.")
