@@ -1,5 +1,5 @@
 # FILE: models.py
-# A hypothetical structure showing the classes and their relationships.
+# A structure showing the classes and their relationships.
 
 from datetime import datetime
 from enum import Enum

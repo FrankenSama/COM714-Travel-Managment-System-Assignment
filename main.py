@@ -1178,17 +1178,17 @@ class TravelManagementSystem:
 
     def generate_total_invoice(self):
         print("\n--- Generate Total Invoice ---")
-        print("This feature will be implemented in the next phase.")
+        print("To be added.")
         input("Press Enter to continue...")
 
     def generate_reports(self):
         print("\n--- Generate Reports ---")
-        print("This feature will be implemented in the next phase.")
+        print("To be added.")
         input("Press Enter to continue...")
 
     def generate_itinerary(self):
         print("\n--- Generate Itinerary ---")
-        print("This feature will be implemented in the next phase.")
+        print("To be added.")
         input("Press Enter to continue...")
 
 if __name__ == "__main__":

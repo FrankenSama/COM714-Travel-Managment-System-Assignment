@@ -1,4 +1,4 @@
-# FILE: auth.py (UPDATED VERSION)
+# FILE: auth.py
 # Handles user authentication and session management.
 
 class AuthenticationService:
