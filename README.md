@@ -1,227 +1,261 @@
-# Travel Management System - Solent Trips
+# 🌍 COM714 Travel Management System – Solent Trips
 
-A comprehensive Python-based Travel Management System developed for Solent University's COM714 Software Design & Development module.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-Visualization-orange)
+![JSON](https://img.shields.io/badge/Data-JSON-lightgrey)
+![License](https://img.shields.io/badge/License-Academic-informational)
+![GitHub](https://img.shields.io/badge/GitHub-Repository-brightgreen)
 
-## 📋 Project Overview
+A comprehensive **Python-based Travel Management System** developed for **Solent University’s COM714 – Software Design & Development** module.  
+The system replaces manual trip administration with a fully digitized platform for managing users, trips, finances, and analytical reporting.
 
-This system digitizes the entire trip lifecycle for Solent Trips, replacing manual paperwork with an automated platform that streamlines communication between staff and travellers while providing centralized management of all trip aspects.
+---
 
-## ✨ Features
+## 📊 Project Highlights
 
-### User Management
-- **Role-Based Access Control**: Three-tier hierarchy (Administrator → Trip Manager → Trip Coordinator)
-- **Secure Authentication**: SHA-256 password hashing
-- **User CRUD Operations**: Create, view, update, and delete users
+| Aspect | Technologies Used | Key Features |
+|------|------------------|--------------|
+| **Application** | Python 3.8+ | Modular design, OOP, role-based menus |
+| **Data Management** | JSON | Persistent storage, serialization |
+| **Security** | SHA-256 | Secure authentication, RBAC |
+| **Analytics** | Matplotlib, NumPy | Visual reports & trend analysis |
+| **Design** | UML (ICONIX) | Class, Use Case & Robustness diagrams |
 
-### Trip Management
-- Complete trip lifecycle management
-- Trip coordinator assignment
-- Trip status tracking (active/inactive)
-- Multiple traveller assignments per trip
+---
 
-### Financial Management
-- Automated invoice generation from trip costs
-- Payment tracking with multiple payment methods
-- Balance calculations and payment history
-- Invoice status management
+## 🎯 Learning Outcomes Demonstrated
 
-### Reporting & Analytics
-- Trip statistics with visualizations
-- Financial summaries and trends
-- Traveller demographics analysis
-- Revenue trend analysis over time
+### 1. Object-Oriented Design
+- Inheritance-based user hierarchy  
+- Encapsulation of business rules  
+- Composition for trip and leg structures  
+- Clear separation of responsibilities  
 
-### Trip Leg System
-- Detailed transportation segment management
-- Support for multiple transport modes (Flight, Train, Bus, Taxi, Ship)
-- Leg types (Accommodation, Point of Interest, Transfer)
-- Cost tracking per leg
-- Automated itinerary generation
+### 2. Software Architecture
+- Three-layer architecture  
+- Separation of concerns  
+- Scalable and maintainable structure  
 
-## 🛠️ Technology Stack
+### 3. Secure Application Development
+- Password hashing with SHA-256  
+- Role-based access control  
+- Session handling and validation  
 
-- **Python 3.8+**
-- **Standard Libraries**:
-  - `json` - Data persistence
-  - `datetime` - Date/time handling
-  - `hashlib` - Password hashing
-  - `enum` - Type-safe enumerations
-  - `os` - File path operations
-- **Visualization**:
-  - `matplotlib` - Chart generation for reports
-  - `numpy` - Data processing
+### 4. Data Processing & Reporting
+- Cost aggregation and invoice generation  
+- Financial summaries  
+- Traveller demographic analysis  
+- Revenue trend visualizations  
+
+---
+
+## 🔍 Core Features
+
+### 👤 User Management
+- Three-tier role hierarchy  
+  **Administrator → Trip Manager → Trip Coordinator**
+- Secure login system  
+- Full CRUD operations for users  
+
+### 🧳 Trip Management
+- Complete trip lifecycle handling  
+- Trip coordinator assignment  
+- Trip status tracking (active / inactive)  
+- Multiple traveller assignments  
+
+### 💰 Financial Management
+- Automated invoice generation  
+- Payment tracking (multiple methods)  
+- Balance calculations  
+- Invoice status management  
+
+### 🗺️ Trip Leg System
+- Multi-leg itinerary support  
+- Transport modes: Flight, Train, Bus, Taxi, Ship  
+- Leg types: Accommodation, Transfer, Point of Interest  
+- Cost tracking per leg  
+- Automated itinerary generation  
+
+### 📈 Reporting & Analytics
+- Trip statistics by coordinator  
+- Financial summaries  
+- Traveller age demographics  
+- Revenue trends over time  
+
+---
+
+## 🧱 System Architecture
+
+Presentation Layer (Console UI)  
+- Role-based menus  
+
+Business Logic Layer  
+- User management  
+- Trip & traveller management  
+- Financial processing  
+
+Data Access Layer  
+- JSON file persistence  
+
+### Design Principles Applied
+- Encapsulation  
+- Inheritance  
+- Single Responsibility Principle  
+- Separation of Concerns  
+- Composition over Inheritance  
+
+---
 
 ## 📁 Project Structure
 
-```
-COM714_Travel_System/
-├── main.py                 # Main application entry point
-├── models.py              # Domain models and business entities
-├── auth.py                # Authentication and authorization
-├── data_manager.py        # Data persistence layer (JSON)
-├── report_generator.py    # Report generation with matplotlib
-├── data/                  # JSON data storage
-│   ├── users.json
-│   ├── travellers.json
-│   ├── trips.json
-│   └── invoices.json
-├── reports/               # Generated report visualizations
-├── tests/                 # Unit tests
-└── README.md
-```
+COM714_Travel_System/  
+├── main.py  
+├── models.py  
+├── auth.py  
+├── data_manager.py  
+├── report_generator.py  
+├── data/  
+│   ├── users.json  
+│   ├── travellers.json  
+│   ├── trips.json  
+│   └── invoices.json  
+├── reports/  
+├── tests/  
+└── README.md  
 
-## 🚀 Installation & Setup
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+- Python 3.8+  
+- pip  
 
-### Installation Steps
+### Installation
+git clone https://github.com/FrankenSama/COM714_Travel_System.git  
+cd COM714_Travel_System  
+pip install matplotlib numpy  
+python main.py  
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/FrankenSama/COM714_Travel_System.git
-cd COM714_Travel_System
-```
-
-2. **Install dependencies**
-```bash
-pip install matplotlib numpy
-```
-
-3. **Run the application**
-```bash
-python main.py
-```
+---
 
 ## 🔐 Default Login Credentials
 
-**Administrator Account:**
-- Username: `admin`
-- Password: `admin123`
+**Administrator**  
+- Username: `admin`  
+- Password: `admin123`  
 
-> ⚠️ **Important**: Change the default administrator password after first login in a production environment.
+⚠️ Change the default password immediately in any production scenario.
 
-## 📖 User Guide
+---
 
-### Administrator Functions
-- Create and manage Trip Managers
-- View all system invoices
-- Generate comprehensive reports
-- Access all Trip Coordinator functions
+## 👥 User Roles & Permissions
 
-### Trip Manager Functions
-- Create and manage Trip Coordinators
-- Generate total invoices for trips
-- Access all Trip Coordinator functions
+### Administrator
+- Manage Trip Managers  
+- View all invoices  
+- Generate full system reports  
+- Full system access  
 
-### Trip Coordinator Functions
-- Manage trips (CRUD operations)
-- Manage travellers
-- Create and manage trip legs
-- Assign/remove travellers to/from trips
-- Generate itineraries
-- Handle payments and invoices
+### Trip Manager
+- Manage Trip Coordinators  
+- Generate trip-level invoices  
+- Access coordinator functions  
 
-## 🏗️ Architecture
+### Trip Coordinator
+- Manage trips and travellers  
+- Create trip legs and itineraries  
+- Handle invoices and payments  
 
-The system follows a **three-layer architecture**:
-
-1. **Presentation Layer**: Console-based menu system with role-specific interfaces
-2. **Business Logic Layer**: Object-oriented domain models and controllers
-3. **Data Access Layer**: JSON file persistence with serialization/deserialization
-
-### Design Principles Applied
-- **Encapsulation**: Each class manages its own data
-- **Inheritance**: User role hierarchy
-- **Separation of Concerns**: Clear separation between UI, business logic, and data
-- **Single Responsibility**: Each class has a focused purpose
-- **Composition over Inheritance**: Object relationships
-
-## 🎨 UML Design
-
-The system was designed using the **ICONIX process** with three key UML diagrams:
-
-1. **Class Diagram**: Shows the object-oriented structure including:
-   - User inheritance hierarchy
-   - Trip composition relationships
-   - Enumeration types
-
-2. **Use Case Diagram**: Documents all system functionalities by actor role
-
-3. **Robustness Diagram**: Details the "Generate Itinerary" use case showing:
-   - Boundary objects (UI)
-   - Controller objects (business logic)
-   - Entity objects (data models)
+---
 
 ## 🧪 Testing
 
-Run the test suite:
-```bash
-python -m unittest discover tests
-```
+Run all tests using:  
+python -m unittest discover tests  
 
-### Testing Coverage
-- Unit tests for authentication
-- Cost calculation validation
-- Data serialization/deserialization
-- Invoice and payment processing
-- Trip leg management
+### Coverage Includes
+- Authentication logic  
+- Cost calculations  
+- JSON serialization  
+- Invoice and payment processing  
+- Trip leg management  
 
-## 📊 Report Types
+---
 
-The system generates four types of visualizations:
+## 📊 Generated Report Types
 
-1. **Trip Statistics**: Distribution of trips per coordinator with status breakdown
-2. **Financial Summary**: Revenue overview, payment methods, top invoices
-3. **Traveller Statistics**: Age distribution and demographics
-4. **Revenue Trends**: Monthly revenue and trip count trends
+1. Trip Statistics  
+2. Financial Summary  
+3. Traveller Statistics  
+4. Revenue Trends  
 
 Reports are saved as PNG files in the `reports/` directory.
 
+---
+
 ## 🔒 Security Features
 
-- **Password Hashing**: SHA-256 encryption for all passwords
-- **Role-Based Access Control**: Hierarchical permission system
-- **Session Management**: Secure user authentication and logout
-- **Data Validation**: Input validation and error handling
+- SHA-256 password hashing  
+- Role-based access control  
+- Input validation  
+- Controlled session management  
+
+---
 
 ## 🐛 Known Limitations
 
-- **No Database**: Uses JSON files (not suitable for concurrent access)
-- **Console Interface**: Limited to command-line interaction
-- **No Real Payments**: Payment processing is simulated
-- **Single-User Session**: One user can be logged in at a time
+- JSON storage (no concurrent access)  
+- Console-based UI  
+- Simulated payment processing  
+- Single-user session  
+
+---
 
 ## 🔮 Future Enhancements
 
-- [ ] Database integration (SQLite/PostgreSQL)
-- [ ] Web-based interface (Django/Flask)
-- [ ] Multi-user concurrent access
-- [ ] Real payment gateway integration
-- [ ] Email notifications
-- [ ] Advanced analytics and predictive trends
-- [ ] Export functionality (PDF reports, CSV data)
-- [ ] API for third-party integrations
+- Database integration (SQLite / PostgreSQL)  
+- Web interface (Flask / Django)  
+- Multi-user concurrent access  
+- Real payment gateway  
+- Email notifications  
+- PDF / CSV export  
+- REST API  
+
+---
+
+## 📚 Academic Context
+
+- **Module:** COM714 – Software Design & Development  
+- **University:** Solent University  
+- **Programme:** MSc Computer Engineering  
+- **Academic Year:** 2024–2025  
+- **Tutor:** Daniel Olabanji  
+
+---
 
 ## 👨‍💻 Author
 
-**Octavio Silva**
-- MSc Computer Engineering
-- Solent University (2024-2025)
-- Module: COM714 - Software Design & Development
+**Octavio Silva**  
+MSc Computer Engineering  
+Solent University  
+GitHub: **@FrankenSama**
+
+---
 
 ## 📄 License
 
-This project is developed as part of university coursework for Solent University.
+Developed as part of academic coursework for Solent University.
+
+---
 
 ## 🙏 Acknowledgments
 
-- Module Leader: Daniel Olabanji
-- Solent University School of Science and Engineering
-- Python Software Foundation
-- Matplotlib Development Team
+- Solent University – School of Science & Engineering  
+- Python Software Foundation  
+- Matplotlib Development Team  
 
-**Last Updated**: January 2025
+---
 
-**Version**: 1.1.0
+**Last Updated:** January 2025  
+**Version:** 1.1.0
