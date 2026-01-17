@@ -33,57 +33,23 @@ class User:
     def login(self, username: str, password: str) -> bool:
         return self.username == username and self.password == password
 
-    # This class is abstract. Specific methods are in the child classes.
-
 class TripCoordinator(User):
     def __init__(self, user_id: str, username: str, password: str, name: str):
         super().__init__(user_id, username, password, name, UserRole.COORDINATOR)
         self.managed_trips: List['Trip'] = []
-
-    def add_traveller_to_trip(self, trip: 'Trip', traveller: 'Traveller') -> bool:
-        # Implementation logic here
-        pass
-
-    def update_trip_leg(self, trip: 'Trip', old_leg: 'TripLeg', new_leg: 'TripLeg') -> bool:
-        # Implementation logic here
-        pass
-
-    def generate_itinerary(self, trip: 'Trip') -> 'Itinerary':
-        # Implementation logic here
-        pass
-
-    def record_payment(self, trip: 'Trip', amount: float, description: str) -> 'Payment':
-        # Implementation logic here
-        pass
 
 class TripManager(User):
     def __init__(self, user_id: str, username: str, password: str, name: str):
         super().__init__(user_id, username, password, name, UserRole.MANAGER)
         self.managed_coordinators: List[TripCoordinator] = []
 
-    # Inherits all TripCoordinator methods
-    def create_trip_coordinator(self, user_id: str, username: str, password: str, name: str) -> TripCoordinator:
-        # Implementation logic here
-        pass
-
-    def generate_total_invoice(self, trip: 'Trip') -> 'Invoice':
-        # Implementation logic here
-        pass
-
 class Administrator(User):
     def __init__(self, user_id: str, username: str, password: str, name: str):
         super().__init__(user_id, username, password, name, UserRole.ADMIN)
 
-    def create_trip_manager(self, user_id: str, username: str, password: str, name: str) -> TripManager:
-        # Implementation logic here
-        pass
-
-    def view_all_invoices(self) -> List['Invoice']:
-        # Implementation logic here
-        pass
-
 class Traveller:
-    def __init__(self, traveller_id: str, name: str, address: str, date_of_birth: datetime, emergency_contact: str, government_id: str):
+    def __init__(self, traveller_id: str, name: str, address: str, date_of_birth: datetime, 
+                 emergency_contact: str, government_id: str):
         self.traveller_id = traveller_id
         self.name = name
         self.address = address
@@ -92,14 +58,15 @@ class Traveller:
         self.government_id = government_id
 
 class Trip:
-    def __init__(self, trip_id: str, name: str, start_date: datetime, duration_days: int, coordinator: TripCoordinator):
+    def __init__(self, trip_id: str, name: str, start_date: datetime, duration_days: int, 
+                 coordinator: Optional[TripCoordinator] = None):
         self.trip_id = trip_id
         self.name = name
         self.start_date = start_date
         self.duration_days = duration_days
         self.coordinator = coordinator
         self.travellers: List[Traveller] = []
-        self.trip_legs: List[TripLeg] = []
+        self.trip_legs: List['TripLeg'] = []
         self.is_active = True
 
 class TripLeg:
@@ -120,36 +87,17 @@ class TripLeg:
         return f"{self.sequence}. {self.start_location} → {self.destination} ({self.transport_mode.value})"
 
 class Invoice:
-    def __init__(self, invoice_id: str, trip: Trip, issue_date: datetime, total_amount: float):
+    def __init__(self, invoice_id: str, trip: Trip, issue_date: datetime, total_amount: float, 
+                 status: str = "Pending"):
         self.invoice_id = invoice_id
         self.trip = trip
         self.issue_date = issue_date
         self.total_amount = total_amount
-        self.payments: List[Payment] = []
-        self.is_paid = False
-
-    def calculate_balance(self) -> float:
-        total_paid = sum(payment.amount for payment in self.payments)
-        return self.total_amount - total_paid
-
-class Payment:
-    def __init__(self, payment_id: str, invoice: Invoice, amount: float, date: datetime, method: str):
-        self.payment_id = payment_id
-        self.invoice = invoice
-        self.amount = amount
-        self.date = date
-        self.method = method
-        
-class Invoice:
-    def __init__(self, invoice_id: str, trip: Trip, issue_date: datetime, total_amount: float, status: str = "Pending"):
-        self.invoice_id = invoice_id
-        self.trip = trip
-        self.issue_date = issue_date
-        self.total_amount = total_amount
-        self.status = status  # Pending, Paid, Cancelled
-        self.payments = []
+        self.status = status
+        self.payments: List['Payment'] = []
 
     def add_payment(self, amount: float, payment_date: datetime, method: str = "Cash"):
+        """Add a payment to this invoice"""
         payment = Payment(
             payment_id=f"PAY{datetime.now().strftime('%Y%m%d%H%M%S')}",
             invoice=self,
@@ -161,15 +109,17 @@ class Invoice:
         return payment
 
     def calculate_balance(self) -> float:
+        """Calculate remaining balance on this invoice"""
         total_paid = sum(payment.amount for payment in self.payments)
         return self.total_amount - total_paid
 
     def is_fully_paid(self) -> bool:
+        """Check if invoice is fully paid"""
         return self.calculate_balance() <= 0
 
     def __str__(self):
         balance = self.calculate_balance()
-        status_icon = "✓" if self.is_fully_paid() else "●"
+        status_icon = "✓" if self.is_fully_paid() else "◯"
         return f"{status_icon} Invoice {self.invoice_id} - £{self.total_amount:.2f} ({self.status}) - Balance: £{balance:.2f}"
 
 class Payment:
@@ -212,15 +162,18 @@ class Itinerary:
         output += f"TOTAL ESTIMATED COST: £{total_cost:.2f}\n"
         
         return output
-    
-# Reporting Class (Uses Matplotlib/Plotly)
+
 class ReportGenerator:
+    """Reporting class that uses Matplotlib for visualizations"""
+    
     @staticmethod
     def generate_financial_summary(trips: List[Trip]) -> None:
-        # Uses matplotlib to plot a chart
+        """Generate financial summary using matplotlib"""
         pass
 
     @staticmethod
     def generate_traveller_statistics(travellers: List[Traveller]) -> None:
-        # Uses matplotlib to plot a chart
+        """Generate traveller statistics using matplotlib"""
         pass
+
+print("Models module loaded successfully.")

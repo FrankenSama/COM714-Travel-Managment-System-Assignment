@@ -39,8 +39,8 @@ def save_user(user) -> None:
         'username': user.username,
         'password': user.password,
         'name': user.name,
-        'role': user.role.value,  # Store the enum value as string
-        '_type': type(user).__name__  # Store the class name for reconstruction
+        'role': user.role.value,
+        '_type': type(user).__name__
     }
     
     # Check if user exists, if so, update. Else, append.
@@ -58,14 +58,11 @@ def save_user(user) -> None:
 
 def load_users() -> List:
     """Loads all users from the JSON file and returns them as User objects."""
-    from models import User, TripCoordinator, TripManager, Administrator
-    
     users_data = _load_json(USER_FILE)
     users = []
     
     for user_data in users_data:
         try:
-            role = user_data['role']
             user_type = user_data.get('_type', 'User')
             
             # Reconstruct the user object based on stored type
@@ -97,7 +94,7 @@ def load_users() -> List:
                     username=user_data['username'],
                     password=user_data['password'],
                     name=user_data['name'],
-                    role=role
+                    role=user_data['role']
                 )
             users.append(user)
         except Exception as e:
@@ -108,17 +105,20 @@ def load_users() -> List:
 
 def create_trip_manager(user_id: str, username: str, password: str, name: str) -> TripManager:
     """Create a new Trip Manager user."""
-    from models import TripManager
+    import hashlib
     
     # Check if username already exists
     existing_users = load_users()
     if any(user.username == username for user in existing_users):
         raise ValueError(f"Username '{username}' already exists.")
     
+    # Hash the password
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    
     new_manager = TripManager(
         user_id=user_id,
         username=username,
-        password=password,
+        password=hashed_password,
         name=name
     )
     
@@ -127,17 +127,20 @@ def create_trip_manager(user_id: str, username: str, password: str, name: str) -
 
 def create_trip_coordinator(user_id: str, username: str, password: str, name: str) -> TripCoordinator:
     """Create a new Trip Coordinator user."""
-    from models import TripCoordinator
+    import hashlib
     
     # Check if username already exists
     existing_users = load_users()
     if any(user.username == username for user in existing_users):
         raise ValueError(f"Username '{username}' already exists.")
     
+    # Hash the password
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    
     new_coordinator = TripCoordinator(
         user_id=user_id,
         username=username,
-        password=password,
+        password=hashed_password,
         name=name
     )
     
@@ -177,8 +180,6 @@ def save_traveller(traveller) -> None:
 
 def load_travellers() -> List:
     """Loads all travellers from the JSON file."""
-    from models import Traveller
-    
     travellers_data = _load_json(TRAVELLER_FILE)
     travellers = []
     
@@ -195,6 +196,19 @@ def load_travellers() -> List:
             continue
     
     return travellers
+
+def delete_traveller(traveller_id: str) -> None:
+    """Permanently delete a traveller from the JSON file."""
+    travellers = _load_json(TRAVELLER_FILE)
+    updated_travellers = [t for t in travellers if t['traveller_id'] != traveller_id]
+    _save_json(TRAVELLER_FILE, updated_travellers)
+    
+    # Also remove the traveller from any trips they were assigned to
+    trips = _load_json(TRIP_FILE)
+    for trip in trips:
+        if 'traveller_ids' in trip and traveller_id in trip['traveller_ids']:
+            trip['traveller_ids'].remove(traveller_id)
+    _save_json(TRIP_FILE, trips)
 
 def assign_traveller_to_trip(trip_id: str, traveller_id: str) -> bool:
     """Assign a traveller to a trip."""
@@ -257,9 +271,24 @@ def save_trip(trip) -> None:
         'duration_days': trip.duration_days,
         'coordinator_id': trip.coordinator.user_id if trip.coordinator else None,
         'traveller_ids': [t.traveller_id for t in trip.travellers],
-        'trip_leg_ids': [leg.leg_id for leg in trip.trip_legs],
-        'is_active': trip.is_active
+        'is_active': trip.is_active,
+        'trip_legs': []
     }
+    
+    # Save trip legs within the trip
+    for leg in trip.trip_legs:
+        leg_dict = {
+            'leg_id': leg.leg_id,
+            'sequence': leg.sequence,
+            'start_location': leg.start_location,
+            'destination': leg.destination,
+            'transport_provider': leg.transport_provider,
+            'transport_mode': leg.transport_mode.value,
+            'leg_type': leg.leg_type.value,
+            'cost': leg.cost,
+            'description': leg.description
+        }
+        trip_dict['trip_legs'].append(leg_dict)
     
     trip_found = False
     for i, t in enumerate(trips):
@@ -273,11 +302,36 @@ def save_trip(trip) -> None:
     
     _save_json(TRIP_FILE, trips)
 
+def save_trip_legs(trip) -> None:
+    """Saves all trip legs for a trip (calls save_trip internally)."""
+    save_trip(trip)
+
+def load_trip_legs_for_trip(trip_data: dict) -> List:
+    """Loads trip legs for a specific trip from trip data."""
+    trip_legs = []
+    if 'trip_legs' in trip_data:
+        for leg_data in trip_data['trip_legs']:
+            try:
+                leg = TripLeg(
+                    leg_id=leg_data['leg_id'],
+                    sequence=leg_data['sequence'],
+                    start_location=leg_data['start_location'],
+                    destination=leg_data['destination'],
+                    transport_provider=leg_data['transport_provider'],
+                    transport_mode=TransportMode(leg_data['transport_mode']),
+                    leg_type=TripLegType(leg_data['leg_type']),
+                    cost=leg_data.get('cost', 0.0),
+                    description=leg_data.get('description', '')
+                )
+                trip_legs.append(leg)
+            except Exception as e:
+                print(f"Error loading trip leg {leg_data.get('leg_id', 'unknown')}: {e}")
+                continue
+    
+    return trip_legs
+
 def load_trips() -> List:
     """Loads all trips from the JSON file."""
-    from models import Trip
-    from data_manager import load_users, load_travellers
-    
     trips_data = _load_json(TRIP_FILE)
     all_users = load_users()
     all_travellers = load_travellers()
@@ -291,99 +345,12 @@ def load_trips() -> List:
             
             # Find coordinator by user_id
             coordinator = None
-            if data['coordinator_id']:
+            if data.get('coordinator_id'):
                 coordinator = next((u for u in all_users if u.user_id == data['coordinator_id']), None)
             
             # Find travellers by their IDs
             travellers = []
-            for traveller_id in data['traveller_ids']:
-                traveller = next((t for t in all_travellers if t.traveller_id == traveller_id), None)
-                if traveller:
-                    travellers.append(traveller)
-            
-            # Create trip object
-            trip = Trip(
-                trip_id=data['trip_id'],
-                name=data['name'],
-                start_date=data['start_date'],
-                duration_days=data['duration_days'],
-                coordinator=coordinator
-            )
-            trip.travellers = travellers
-            trip.is_active = data.get('is_active', True)
-            
-            trips.append(trip)
-        except Exception as e:
-            print(f"Error loading trip {data.get('trip_id', 'unknown')}: {e}")
-            continue
-    
-    return trips
-
-def delete_traveller(traveller_id: str) -> None:
-    """Permanently delete a traveller from the JSON file."""
-    travellers = _load_json(TRAVELLER_FILE)
-    # Filter out the traveller to be deleted
-    updated_travellers = [t for t in travellers if t['traveller_id'] != traveller_id]
-    _save_json(TRAVELLER_FILE, updated_travellers)
-    
-    # Also remove the traveller from any trips they were assigned to
-    trips = _load_json(TRIP_FILE)
-    for trip in trips:
-        if 'traveller_ids' in trip and traveller_id in trip['traveller_ids']:
-            trip['traveller_ids'].remove(traveller_id)
-    _save_json(TRIP_FILE, trips)
-
-def save_trip(trip) -> None:
-    """Saves a single trip to the JSON file."""
-    trips = _load_json(TRIP_FILE)
-    
-    trip_dict = {
-        'trip_id': trip.trip_id,
-        'name': trip.name,
-        'start_date': trip.start_date.isoformat() if hasattr(trip.start_date, 'isoformat') else str(trip.start_date),
-        'duration_days': trip.duration_days,
-        'coordinator_id': trip.coordinator.user_id if trip.coordinator else None,
-        'traveller_ids': [t.traveller_id for t in trip.travellers],
-        'trip_leg_ids': [leg.leg_id for leg in trip.trip_legs],
-        'is_active': trip.is_active
-    }
-    
-    trip_found = False
-    for i, t in enumerate(trips):
-        if t['trip_id'] == trip.trip_id:
-            trips[i] = trip_dict
-            trip_found = True
-            break
-    
-    if not trip_found:
-        trips.append(trip_dict)
-    
-    _save_json(TRIP_FILE, trips)
-
-def load_trips() -> List:
-    """Loads all trips from the JSON file."""
-    from models import Trip
-    from data_manager import load_users, load_travellers
-    
-    trips_data = _load_json(TRIP_FILE)
-    all_users = load_users()
-    all_travellers = load_travellers()
-    trips = []
-    
-    for data in trips_data:
-        try:
-            # Convert string date back to datetime object
-            if 'start_date' in data:
-                data['start_date'] = datetime.fromisoformat(data['start_date'])
-            
-            # Find coordinator by user_id
-            coordinator = None
-            if data['coordinator_id']:
-                coordinator = next((u for u in all_users if u.user_id == data['coordinator_id']), None)
-            
-            # Find travellers by their IDs
-            travellers = []
-            for traveller_id in data['traveller_ids']:
+            for traveller_id in data.get('traveller_ids', []):
                 traveller = next((t for t in all_travellers if t.traveller_id == traveller_id), None)
                 if traveller:
                     travellers.append(traveller)
@@ -410,62 +377,8 @@ def load_trips() -> List:
 def delete_trip(trip_id: str) -> None:
     """Permanently delete a trip from the JSON file."""
     trips = _load_json(TRIP_FILE)
-    # Filter out the trip to be deleted
     updated_trips = [t for t in trips if t['trip_id'] != trip_id]
     _save_json(TRIP_FILE, updated_trips)
-
-def save_trip_legs(trip) -> None:
-    """Saves all trip legs for a trip."""
-    # We'll store trip legs within the trip data
-    trips = _load_json(TRIP_FILE)
-    
-    for trip_data in trips:
-        if trip_data['trip_id'] == trip.trip_id:
-            # Convert trip legs to dictionaries
-            trip_data['trip_legs'] = []
-            for leg in trip.trip_legs:
-                leg_dict = {
-                    'leg_id': leg.leg_id,
-                    'sequence': leg.sequence,
-                    'start_location': leg.start_location,
-                    'destination': leg.destination,
-                    'transport_provider': leg.transport_provider,
-                    'transport_mode': leg.transport_mode.value,
-                    'leg_type': leg.leg_type.value,
-                    'cost': leg.cost,
-                    'description': leg.description
-                }
-                trip_data['trip_legs'].append(leg_dict)
-            break
-    
-    _save_json(TRIP_FILE, trips)
-
-def load_trip_legs_for_trip(trip_data: dict) -> List:
-    """Loads trip legs for a specific trip from trip data."""
-    # Import locally to avoid circular imports
-    from models import TripLeg, TransportMode, TripLegType
-    
-    trip_legs = []
-    if 'trip_legs' in trip_data:
-        for leg_data in trip_data['trip_legs']:
-            try:
-                leg = TripLeg(
-                    leg_id=leg_data['leg_id'],
-                    sequence=leg_data['sequence'],
-                    start_location=leg_data['start_location'],
-                    destination=leg_data['destination'],
-                    transport_provider=leg_data['transport_provider'],
-                    transport_mode=TransportMode(leg_data['transport_mode']),
-                    leg_type=TripLegType(leg_data['leg_type']),
-                    cost=leg_data.get('cost', 0.0),
-                    description=leg_data.get('description', '')
-                )
-                trip_legs.append(leg)
-            except Exception as e:
-                print(f"Error loading trip leg {leg_data.get('leg_id', 'unknown')}: {e}")
-                continue
-    
-    return trip_legs
 
 def save_invoice(invoice) -> None:
     """Saves an invoice to the JSON file."""
@@ -505,9 +418,6 @@ def save_invoice(invoice) -> None:
 
 def load_invoices() -> List:
     """Loads all invoices from the JSON file."""
-    from models import Invoice, Payment
-    from data_manager import load_trips
-    
     invoices_data = _load_json(INVOICE_FILE)
     trips = load_trips()
     invoices = []

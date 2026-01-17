@@ -1,0 +1,23 @@
+# Travel Management System - Python Requirements
+# COM714 Software Design & Development
+# Solent University 2024-2025
+
+# Data Visualization
+matplotlib>=3.5.0
+numpy>=1.21.0
+
+# Standard library modules (included with Python 3.8+)
+# These don't need installation but are listed for documentation:
+# - json
+# - datetime
+# - hashlib
+# - enum
+# - os
+# - typing
+# - unittest
+
+# Optional: Code Quality Tools (for development)
+# Uncomment if you want to use these tools:
+# pylint>=2.12.0
+# black>=21.12b0
+# mypy>=0.931

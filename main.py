@@ -1177,19 +1177,105 @@ class TravelManagementSystem:
         input("\nPress Enter to continue...")
 
     def generate_total_invoice(self):
+        """Generate total invoice (placeholder)."""
         print("\n--- Generate Total Invoice ---")
-        print("To be added.")
+        print("To be implemented: Total invoice generation for all trips managed by this Trip Manager.")
         input("Press Enter to continue...")
 
     def generate_reports(self):
-        print("\n--- Generate Reports ---")
-        print("To be added.")
-        input("Press Enter to continue...")
+        """Generate various reports using matplotlib."""
+        from data_manager import load_trips, load_travellers, load_invoices
+        from report_generator import ReportGenerator
+        
+        self.clear_screen()
+        self.display_header()
+        print("=== GENERATE REPORTS ===")
+        
+        trips = load_trips()
+        travellers = load_travellers()
+        invoices = load_invoices()
+        
+        print("1. Trip Statistics Report")
+        print("2. Financial Summary Report")
+        print("3. Traveller Statistics Report")
+        print("4. Revenue Trends Report")
+        print("5. Back")
+        
+        choice = input("\nSelect report type (1-5): ")
+        
+        if choice == "1":
+            success, result = ReportGenerator.generate_trip_statistics(trips)
+            if success:
+                print(f"\n✓ Report generated successfully!")
+                print(f"Saved to: {result}")
+            else:
+                print(f"\n✗ Report generation failed: {result}")
+        elif choice == "2":
+            success, result = ReportGenerator.generate_financial_summary(invoices)
+            if success:
+                print(f"\n✓ Report generated successfully!")
+                print(f"Saved to: {result}")
+            else:
+                print(f"\n✗ Report generation failed: {result}")
+        elif choice == "3":
+            success, result = ReportGenerator.generate_traveller_statistics(travellers)
+            if success:
+                print(f"\n✓ Report generated successfully!")
+                print(f"Saved to: {result}")
+            else:
+                print(f"\n✗ Report generation failed: {result}")
+        elif choice == "4":
+            success, result = ReportGenerator.generate_revenue_trends(invoices, trips)
+            if success:
+                print(f"\n✓ Report generated successfully!")
+                print(f"Saved to: {result}")
+            else:
+                print(f"\n✗ Report generation failed: {result}")
+        elif choice == "5":
+            return
+        else:
+            print("Invalid choice.")
+        
+        input("\nPress Enter to continue...")
 
     def generate_itinerary(self):
-        print("\n--- Generate Itinerary ---")
-        print("To be added.")
-        input("Press Enter to continue...")
+        """Generate itinerary for a trip."""
+        from data_manager import load_trips
+        from models import Itinerary
+        
+        trips = load_trips()
+        current_user = self.auth_service.current_user
+        
+        # Filter trips based on user role
+        if isinstance(current_user, TripCoordinator):
+            user_trips = [t for t in trips if t.coordinator and t.coordinator.user_id == current_user.user_id]
+        else:
+            user_trips = trips
+        
+        if not user_trips:
+            print("No trips available.")
+            input("Press Enter to continue...")
+            return
+        
+        self.clear_screen()
+        self.display_header()
+        print("=== GENERATE ITINERARY ===")
+        print("\nSelect a trip to generate itinerary:")
+        for i, trip in enumerate(user_trips, 1):
+            print(f"{i}. {trip.name} - {len(trip.trip_legs)} legs")
+        
+        try:
+            choice = int(input("\nSelect trip (number): ")) - 1
+            if 0 <= choice < len(user_trips):
+                itinerary = Itinerary(user_trips[choice])
+                print("\n" + itinerary.display())
+            else:
+                print("Invalid selection.")
+        except ValueError:
+            print("Please enter a valid number.")
+        
+        input("\nPress Enter to continue...")
+
 
 if __name__ == "__main__":
     app = TravelManagementSystem()

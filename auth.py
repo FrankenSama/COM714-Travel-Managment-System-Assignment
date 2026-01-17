@@ -1,25 +1,25 @@
 # FILE: auth.py
 # Handles user authentication and session management.
 
+import hashlib
+
 class AuthenticationService:
     def __init__(self):
         from data_manager import load_users
         self.users = load_users()
         self.current_user = None
-        print(f"DEBUG: Loaded {len(self.users)} users")  # Debug line
-
+    
+    def _hash_password(self, password: str) -> str:
+        """Hash a password for storage."""
+        return hashlib.sha256(password.encode()).hexdigest()
+    
     def login(self, username: str, password: str):
-        """
-        Attempts to log in a user.
-        Returns (success, message, user_object)
-        """
-        print(f"DEBUG: Attempting login for username: {username}")  # Debug line
-        print(f"DEBUG: Available users: {[user.username for user in self.users]}")  # Debug line
-        
+        """Attempt to log in with username and password."""
         for user in self.users:
-            print(f"DEBUG: Checking user: {user.username}")  # Debug line
             if user.username == username:
-                if user.password == password:
+                # Compare hashed passwords
+                hashed_input = self._hash_password(password)
+                if user.password == hashed_input:
                     self.current_user = user
                     return True, f"Login successful! Welcome, {user.name}.", user
                 else:
@@ -38,19 +38,23 @@ def create_default_admin():
     """Create a default administrator for initial testing."""
     from data_manager import load_users, save_user
     from models import Administrator
+    import hashlib
     
     users = load_users()
-    print(f"DEBUG: Checking for existing admins in {len(users)} users")  # Debug line
+    print(f"DEBUG: Checking for existing admins in {len(users)} users")
     
     # Check if any user has the Administrator role
     admin_exists = any(hasattr(user, 'role') and getattr(user.role, 'value', None) == "Administrator" for user in users)
     
     if not admin_exists:
-        print("DEBUG: Creating default admin...")  # Debug line
+        print("DEBUG: Creating default admin...")
+        # Hash the default password
+        hashed_password = hashlib.sha256("admin123".encode()).hexdigest()
+        
         default_admin = Administrator(
             user_id="admin001",
             username="admin",
-            password="admin123",
+            password=hashed_password,
             name="System Administrator"
         )
         save_user(default_admin)
